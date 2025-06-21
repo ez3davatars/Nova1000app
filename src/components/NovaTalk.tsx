@@ -21,7 +21,6 @@ export const NovaTalk: React.FC<NovaTalkProps> = ({
   const { audioSrc, audioRef, isLoading } = useElevenLabsVoice({
     text,
     voiceId,
-    apiKey,
     autoPlay: true,
     onEnd
   });

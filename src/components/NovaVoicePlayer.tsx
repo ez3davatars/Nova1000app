@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { CircularWaveform } from './CircularWaveform';
-import { useNovaAudioLevel } from './useNovaAudioLevel';
+import { useNovaAudioLevel } from '../hooks/useNovaAudioLevel';
 
 interface NovaVoicePlayerProps {
   audioSrc: string; // URL or Blob URL of the ElevenLabs-generated voice
