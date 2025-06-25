@@ -1,99 +1,51 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 
-interface ChatMessageData {
+export interface Message {
   id: string;
   text: string;
   isUser: boolean;
-  timestamp?: Date;
+  timestamp: Date;
 }
 
-async function getGPTResponse(prompt: string): Promise<string> {
-  const res = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${import.meta.env.VITE_OPENAI_API_KEY}`
-    },
-    body: JSON.stringify({
-      model: "gpt-4o",
-      messages: [{ role: "user", content: prompt }]
-    })
-  });
+export const useChat = () => {
+  const [messages, setMessages] = useState<Message[]>([]);
 
-  const data = await res.json();
-  return data.choices?.[0]?.message?.content || "No response generated.";
-}
+  const [isProcessing, setIsProcessing] = useState(false);
 
-async function speakWithElevenLabs(text: string): Promise<void> {
-  window.speechSynthesis.cancel(); // Stop any system TTS
-
-  const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${import.meta.env.VITE_ELEVEN_VOICE_ID}`, {
-    method: 'POST',
-    headers: {
-      'xi-api-key': import.meta.env.VITE_ELEVEN_API_KEY,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({ text })
-  });
-
-  const blob = await response.blob();
-  const audioUrl = URL.createObjectURL(blob);
-  const audio = new Audio(audioUrl);
-  audio.play();
-}
-
-function generateId() {
-  return Math.random().toString(36).substr(2, 9);
-}
-
-export function useChat() {
-  const [messages, setMessages] = useState<ChatMessageData[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-
-  const append = async (input: string) => {
-    setIsLoading(true);
-
-    const userMessage: ChatMessageData = {
-      id: generateId(),
-      text: input,
-      isUser: true,
+  const addMessage = useCallback((text: string, isUser: boolean) => {
+    const newMessage: Message = {
+      id: Date.now().toString(),
+      text,
+      isUser,
       timestamp: new Date()
     };
+    setMessages(prev => [...prev, newMessage]);
+  }, []);
 
-    setMessages(prev => [...prev, userMessage]);
+  const processMessage = useCallback(async (userMessage: string) => {
+    setIsProcessing(true);
+    addMessage(userMessage, true);
 
-    try {
-      const response = await getGPTResponse(input);
-
-      const aiMessage: ChatMessageData = {
-        id: generateId(),
-        text: response,
-        isUser: false,
-        timestamp: new Date()
-      };
-
-      setMessages(prev => [...prev, aiMessage]);
-      await speakWithElevenLabs(response);
-    } catch (error) {
-      console.error("AI processing failed:", error);
-      const fallback = "I'm having trouble processing your request right now.";
-
-      const fallbackMessage: ChatMessageData = {
-        id: generateId(),
-        text: fallback,
-        isUser: false,
-        timestamp: new Date()
-      };
-
-      setMessages(prev => [...prev, fallbackMessage]);
-    }
-
-    setIsLoading(false);
-  };
+    // Simulate AI processing
+    setTimeout(() => {
+      const responses = [
+        "I understand your question. Let me help you with that.",
+        "That's an interesting point. Here's what I think about it.",
+        "Based on your input, I can provide you with some insights.",
+        "I'm processing your request. Here's my response.",
+        "Thank you for your question. Let me address that for you."
+      ];
+      
+      const randomResponse = responses[Math.floor(Math.random() * responses.length)];
+      addMessage(randomResponse, false);
+      setIsProcessing(false);
+    }, 1500);
+  }, [addMessage]);
 
   return {
     messages,
-    isLoading,
-    processMessage: append
+    isProcessing,
+    addMessage,
+    processMessage
   };
-}
+};
